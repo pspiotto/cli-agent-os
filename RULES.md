@@ -202,6 +202,11 @@ Rules that follow:
   that runs first and invokes an agent only when there is something to reason
   about. An agent run spent confirming that nothing happened is the cost to cut
   first in any polling design.
+- When a gate, test suite or other automated run starts, tell {{OWNER}} in
+  the same message how long it will take and the clock time it should finish,
+  estimated from that suite's last recorded run time (its log, a timing line,
+  a NOTES entry), and name the source. No recorded time: say so and give the
+  step count instead, so nobody has to ask how the run is going.
 
 ## Delegated and subagent work
 - The parent reviews the full diff of any subagent output before commit, with
