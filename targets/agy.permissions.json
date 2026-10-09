@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "command(npm run publish:release)",
+      "command(npx wrangler pages deploy)",
+      "command(npx wrangler deploy)"
+    ]
+  }
+}

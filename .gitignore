@@ -1,0 +1,5 @@
+# Session logs are personal in a shared repo (docs/notes-not-handoff.md).
+NOTES.md
+HANDOFF*.md
+docs/*.pdf
+__pycache__/

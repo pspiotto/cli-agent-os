@@ -1,0 +1,11 @@
+# claude-os: LF in the repo and in every working copy, on every machine.
+# This file keeps a byte-identical file from showing as wholly changed on a
+# machine whose Git still carries a system-scope autocrlf=true.
+* text=auto eol=lf
+*.sh text eol=lf
+*.pdf -text
+*.png -text
+*.jpg -text
+*.ico -text
+# The installer copies the banner art byte for byte; never touch its bytes.
+banner/art.txt -text

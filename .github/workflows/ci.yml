@@ -1,0 +1,41 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  # Secrets only. The personal-data denylist lives in the owner's private
+  # overlay and runs locally from .githooks (tools/leak-check.js).
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  tests:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Node unit tests
+        shell: bash
+        run: |
+          rc=0
+          for t in hooks/*.test.js skills/*/*.test.js tools/*.test.js; do
+            out=$(node "$t" 2>&1) || rc=1
+            echo "$t: $(echo "$out" | tail -1)"
+          done
+          exit $rc
+      - name: Installer round trip (PowerShell 7)
+        shell: pwsh
+        run: ./install.test.ps1
+      - name: Installer round trip (Windows PowerShell 5.1)
+        shell: powershell
+        run: ./install.test.ps1
+      - name: Banner round trip
+        shell: pwsh
+        run: ./banner/install-banner.test.ps1

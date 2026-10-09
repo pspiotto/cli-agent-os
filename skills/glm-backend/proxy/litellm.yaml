@@ -1,0 +1,39 @@
+# LiteLLM proxy for `/glm-backend on --bundle`: Claude Code speaks Anthropic Messages to
+# 127.0.0.1:4000 and LiteLLM forwards to Z.ai.
+#
+# Plan first, bundle as overflow. Every request goes to the Coding Plan's OpenAI-style endpoint
+# (api/coding/paas/v4), which counts prompts against the plan's 5-hour and weekly windows, not
+# tokens. When the plan answers 429 (1308 5-hour limit, 1310 weekly), LiteLLM falls back to the
+# pay-as-you-go endpoint (api/paas/v4), which bills the glm-5.3 usage bundle and then the cash
+# balance. The Coding Plan's Anthropic endpoint (api/anthropic) never touches the bundle
+# (docs.z.ai/devpack/faq, read 2026-09-30), hence the proxy. Both plan endpoints share one quota:
+# on 2026-09-30 both returned 1308 with the same reset time.
+#
+# Every model name maps to glm-5.3, including the haiku tier and any claude-* name Claude Code
+# sends for background calls: the bundle covers glm-5.3 only ("Applicable to inference on
+# glm-5.3 models", Z.ai balance page), so a Flash call would bill cash.
+
+model_list:
+  - model_name: "*"
+    litellm_params:
+      model: zai/glm-5.3
+      api_base: https://api.z.ai/api/coding/paas/v4
+      api_key: os.environ/ZAI_API_KEY
+  - model_name: glm-bundle
+    litellm_params:
+      model: zai/glm-5.3
+      api_base: https://api.z.ai/api/paas/v4
+      api_key: os.environ/ZAI_API_KEY
+
+router_settings:
+  fallbacks:
+    - "*": ["glm-bundle"]
+  # A spent plan stays spent for hours: no retries against it, and once it fails, skip it for
+  # 5 minutes before trying it again.
+  num_retries: 0
+  allowed_fails: 0
+  cooldown_time: 300
+
+litellm_settings:
+  drop_params: true
+  request_timeout: 3000

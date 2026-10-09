@@ -1,0 +1,11 @@
+# Top-level keys install.ps1 adds to ~/.codex/config.toml when the key is
+# absent. A value already in the file always wins; uninstall.ps1 removes a key
+# only while it still holds exactly this value.
+#
+# Repos used with Claude Code keep their project rules in CLAUDE.md, which
+# Codex does not read on its own. The fallback makes Codex read it where a
+# directory has no AGENTS.md.
+project_doc_fallback_filenames = ["CLAUDE.md"]
+# The default 32 KiB cap is below the global rules plus machine profile plus
+# one large project file (a 75 KB project CLAUDE.md was measured in practice).
+project_doc_max_bytes = 131072
