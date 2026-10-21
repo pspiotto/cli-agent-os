@@ -245,6 +245,13 @@ function Get-CodexHooksObject {
     # forward-slash path so Windows needs no $HOME expansion.
     $src = ConvertFrom-JsonCompat (Read-Text (Join-Path $repo 'settings.json'))
     $homeFwd = ($env:USERPROFILE -replace '\\', '/')
+    # Entries for Claude Code's PowerShell tool are left out: Codex reports its
+    # shell as Bash, so they would never fire, and a new entry in hooks.json
+    # would make every machine re-trust its hooks for nothing.
+    foreach ($ev in @($src.hooks.PSObject.Properties)) {
+        $kept = @(@($ev.Value) | Where-Object { -not ((Test-Prop $_ 'matcher') -and [string] $_.matcher -eq 'PowerShell') })
+        $src.hooks.($ev.Name) = [object[]] $kept
+    }
     foreach ($ev in $src.hooks.PSObject.Properties) {
         foreach ($entry in @($ev.Value)) {
             foreach ($h in @($entry.hooks)) {

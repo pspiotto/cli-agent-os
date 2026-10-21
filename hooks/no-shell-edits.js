@@ -1,5 +1,6 @@
 // agent-os: blocks shell commands that modify files through the shell.
-// Claude Code runs this as a PreToolUse hook (matcher: Bash), and so does
+// Claude Code runs this as a PreToolUse hook on both of its shell tools (one
+// entry with matcher Bash, one with matcher PowerShell), and so does
 // Codex, which reports its shell tool as "Bash" with the same
 // tool_input.command field (https://learn.chatgpt.com/docs/hooks, fetched
 // 2026-09-30). Antigravity reaches it through hooks/agy-hook.js, which maps
@@ -40,9 +41,12 @@ try {
 const FILE_REDIRECT = String.raw`(?<![0-9*])>>?\s*(?!&|/dev/null|\$null)\S`;
 // A heredoc opener: "<<EOF", "<<-EOF", "<<'EOF'", "<<\"EOF\"".
 const HEREDOC = String.raw`<<-?\s*['"]?\w+['"]?`;
-// Where a PowerShell command starts: line start, after | ; & ( { , or as the
-// first word of a `pwsh -Command` / `powershell -c` argument.
-const PS_CMD_START = String.raw`(?:^|[|;&({]\s*|-(?:Command|c)\s+['"]?)`;
+// Where a PowerShell command starts: line start, after ; & ( { , after a pipe
+// with a space on at least one side, or as the first word of a
+// `pwsh -Command` / `powershell -c` argument. An unspaced "|" is left out: in
+// `grep -E "a|Set-Content"` it is regex alternation, not a pipe, and the cost
+// is that an unspaced `x|Set-Content f` passes.
+const PS_CMD_START = String.raw`(?:^|[;&({]\s*|\s\|\s*|\|\s+|-(?:Command|c)\s+['"]?)`;
 // File types that hold source, config or prose.
 const CODE_EXT = String.raw`\.(ts|tsx|js|mjs|cjs|jsx|py|md|json|ps1|psm1|sql|yml|yaml|toml|txt|sh|bat|cmd|xml|html|css|ini|cfg|csv|env)\b`;
 

@@ -71,12 +71,22 @@ const cases = [
   ['ps: Get-Content', 0, 'Get-Content a.txt -TotalCount 5'],
   ['ps: Set-Content named in a commit message', 0, 'git commit -m "hooks: block Set-Content"'],
   ['ps: New-Item directory', 0, 'New-Item -ItemType Directory -Force out'],
+  // A "|" inside a quoted search pattern is regex alternation, not a pipe
+  // (blocked a read-only grep on 2026-10-21).
+  ['grep pattern naming Set-Content', 0, 'grep -n -i -E "powershell|Set-Content|Out-File" hooks/x.js'],
+  ['rg pattern naming Add-Content', 0, "rg 'Add-Content|Set-Content' lib"],
+  ['ps: pipe spaced on one side only', 2, 'Get-Date |Set-Content x.txt'],
+
+  // Claude Code's PowerShell tool sends the same tool_input.command; the hook
+  // must block on it too (settings.json gives it its own matcher).
+  ['claude PowerShell tool: Set-Content', 2, "Set-Content -Path a.md -Value 'x'", 'PowerShell'],
+  ['claude PowerShell tool: Get-ChildItem', 0, 'Get-ChildItem C:\\GIT', 'PowerShell'],
 ];
 
 let failed = 0;
-for (const [label, expect, command] of cases) {
+for (const [label, expect, command, toolName] of cases) {
   const r = spawnSync(process.execPath, [hook], {
-    input: JSON.stringify({ tool_input: { command } }),
+    input: JSON.stringify({ tool_name: toolName || 'Bash', tool_input: { command } }),
     encoding: 'utf8',
   });
   const ok = r.status === expect;

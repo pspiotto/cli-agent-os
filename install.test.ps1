@@ -68,6 +68,8 @@ $rulesSentinel = "# Global rules for coding agents"
 $localText = "# Machine-local rule`n`nThis line is not from the repo and must survive.`n"
 $wmuxBlock = "<!-- wmux:start -->`nwmux managed text`n<!-- wmux:end -->"
 $guardPattern = 'no-shell-edits\.js'
+# The guard has two entries in settings.json: matcher Bash and matcher PowerShell.
+$psGuardPattern = '"matcher":\s*"PowerShell"'
 $emDashPattern = 'no-em-dash\.js'
 $notesPattern = 'notes-stop\.js'
 $notesJs = Join-Path $claudeDir 'hooks\notes-stop.js'
@@ -97,7 +99,8 @@ try {
     Assert ($t.TrimStart().StartsWith('<!-- claude-os:start -->')) 'file begins with start marker'
     Assert ($t.TrimEnd().EndsWith('<!-- claude-os:end -->')) 'file ends with end marker'
     $s = Read-Text $settings
-    Assert ((Count-Matches $s $guardPattern) -eq 1) 'guard hook entry present once'
+    Assert ((Count-Matches $s $guardPattern) -eq 2) 'guard hook entries (Bash, PowerShell) present once each'
+    Assert ((Count-Matches $s $psGuardPattern) -eq 1) 'guard covers the PowerShell tool'
     Assert ((Count-Matches $s $emDashPattern) -eq 1) 'em-dash hook entry present once'
     Assert (Test-Path -LiteralPath $guardJs) 'guard script copied'
     Assert (Test-Path -LiteralPath $enableSkill) 'enable skill copied'
@@ -139,7 +142,7 @@ try {
     Assert ($t.Contains('wmux managed text')) 'wmux block kept'
     Assert ((Count-Matches $t $startPattern) -eq 1) 'still exactly one start marker'
     $s = Read-Text $settings
-    Assert ((Count-Matches $s $guardPattern) -eq 1) 'guard hook entry not duplicated'
+    Assert ((Count-Matches $s $guardPattern) -eq 2) 'guard hook entries not duplicated'
     Assert ($s.Contains('wmux-hook.js')) 'wmux hook kept'
     Assert ($s.Contains('keep-me')) 'other settings keys kept'
     Assert ((Count-Matches $s $allowPattern) -eq 1) 'publish allow rule not duplicated'
@@ -183,7 +186,7 @@ try {
     Assert ($t.Contains('wmux managed text')) 'wmux block kept across the round trip'
     Assert ((Count-Matches $t $startPattern) -eq 1) 'one start marker after round trip'
     $s = Read-Text $settings
-    Assert ((Count-Matches $s $guardPattern) -eq 1) 'guard hook entry back once'
+    Assert ((Count-Matches $s $guardPattern) -eq 2) 'guard hook entries back once each'
     Assert ($s.Contains('wmux-hook.js')) 'wmux hook still there'
     Assert (Test-Path -LiteralPath $guardJs) 'guard script back'
     Assert ((Count-Matches $s $allowPattern) -eq 1) 'publish allow rule back once'

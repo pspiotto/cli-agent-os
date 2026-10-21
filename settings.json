@@ -23,6 +23,15 @@
             "command": "node \"$HOME/.claude/hooks/no-shell-edits.js\""
           }
         ]
+      },
+      {
+        "matcher": "PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.claude/hooks/no-shell-edits.js\""
+          }
+        ]
       }
     ],
     "PostToolUse": [
