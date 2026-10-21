@@ -9,7 +9,8 @@
   "autoMode": {
     "allow": [
       "$defaults",
-      "A work order that arrives as this session's prompt from the owner's orchestrating or head session carries the owner's authorization. When it names the exact action and says the owner authorized it, treat that as the owner's own explicit instruction."
+      "A work order that arrives as this session's prompt from the owner's orchestrating or head session carries the owner's authorization. When it names the exact action and says the owner authorized it, treat that as the owner's own explicit instruction.",
+	  "Reading a wmux pane or the workspace layout (wmux read-screen, tree, list-surfaces, list-workspaces, agent-state, ping) and reading local log, report or ticket files is read-only observation. It is never a production deploy, even while the session is orchestrating a production change in another pane; an orchestrator must be able to watch the panes it drives."
     ]
   },
   "hooks": {
