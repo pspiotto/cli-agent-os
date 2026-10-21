@@ -58,7 +58,8 @@ function Localize-Text([string] $text) {
 # ~/.claude/overlay.txt; install and uninstall both read it from there, so they
 # render and compare files the same way. Layout, every part optional:
 #   overlay.json        { "owner": "Name", "rules": "owner-rules.md",
-#                         "allow": [permission rules], "charters": [...] }
+#                         "allow": [permission rules], "charters": [...],
+#                         "plugins": [{ "id", "marketplace", "install" }] }
 #   <rules file>        appended after RULES.md for every agent
 #   machines/<name>.md  machine profiles (looked up before the repo's)
 #   skills/<name>/      extra skills; a name the repo already has is skipped
@@ -109,6 +110,13 @@ function Get-OverlayAllowRules {
     $a = Get-OverlayValue 'allow'
     if ($null -eq $a) { return @() }
     return @($a | ForEach-Object { [string] $_ })
+}
+
+function Get-OverlayPlugins {
+    # Extra plugins for install.ps1 step 4, as hashtables shaped like $plugins.
+    $p = Get-OverlayValue 'plugins'
+    if ($null -eq $p) { return @() }
+    return @($p | ForEach-Object { @{ id = [string] $_.id; marketplace = [string] $_.marketplace; install = [string] $_.install } })
 }
 
 function Get-ChartersText {

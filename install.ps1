@@ -485,6 +485,10 @@ elseif (Test-Path -LiteralPath $chartersFile) {
 
 # --- 4. Plugins -------------------------------------------------------------
 # Runs after the settings merge so the claude CLI edits the final file.
+# The overlay's "plugins" join the repo's; an id the repo already lists is skipped.
+foreach ($op in @(Get-OverlayPlugins)) {
+    if (@($plugins | ForEach-Object { $_.id }) -notcontains $op.id) { $plugins += $op }
+}
 $claudeCmd = Get-Command claude -ErrorAction SilentlyContinue
 if ($SkipPlugins) {
     $summary.Add("plugins   : skipped (-SkipPlugins)")
