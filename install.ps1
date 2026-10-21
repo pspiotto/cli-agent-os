@@ -181,7 +181,8 @@ function Merge-AllowRules($dstObj, [object[]] $rules, [string] $label) {
     $added = 0
     foreach ($rule in $rules) {
         $ruleText = [string] $rule
-        if ($allow -contains $ruleText) {
+        # -ccontains: rules that differ only in path case are distinct rules.
+        if ($allow -ccontains $ruleText) {
             $summary.Add("$label : already present, skipped ($ruleText)")
         }
         else {

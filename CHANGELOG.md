@@ -6,6 +6,7 @@ owner's overlay changelog.
 
 ## 2026-10-21
 
+- 2026-10-21 | home server | `install.ps1` and `uninstall.ps1` compare permission rules case-sensitively (`-ccontains`). PowerShell's `-contains` ignores case, so an overlay that allowed both `C:/git/...` and `C:/GIT/...` got only the first one installed. `install.test.ps1`: 154 passed, 0 failed.
 - 2026-10-21 | home server | Ported from the overlay's engine copies made after the first release: `scan.js --out <file>` (refuses a path inside the scanned repo; entropy-sweep and verify-docs use it instead of a `>` redirect); the `/workers` skill (Claude Code only); RULES.md bullets for the `> ` prompt-line suggestion, orchestrator-decided implementation choices and relayed owner authorization, plus the release-chain bullet now accepts a relayed grant; `autoMode.allow` in `settings.json` (`$defaults` plus the relay sentence), merged by `install.ps1` and removed by `uninstall.ps1` with `$defaults` kept. `install.test.ps1`: 152 passed, 0 failed.
 
 ## 2026-10-09

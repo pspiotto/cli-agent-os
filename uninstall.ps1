@@ -99,7 +99,7 @@ function Remove-AllowRules($dstObj, [object[]] $rules, [string] $label) {
     $keepRules = New-Object System.Collections.Generic.List[object]
     $removed = 0
     foreach ($rule in @($dstObj.permissions.allow)) {
-        if ($srcRules -contains [string] $rule) {
+        if ($srcRules -ccontains [string] $rule) {
             $removed++
             $summary.Add("$label : removed ($rule)")
         }

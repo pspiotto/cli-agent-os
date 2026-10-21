@@ -331,9 +331,11 @@ try {
     $ov = Join-Path $scratch 'overlay'
     New-Item -ItemType Directory -Path (Join-Path $ov 'machines'), (Join-Path $ov 'skills\ov-skill'), (Join-Path $ov 'skills\promote') -Force | Out-Null
     $ovRule = 'Bash(overlay-only-tool:*)'
+    $ovRuleLower = 'Bash(node C:/git/case-tool.mjs:*)'
+    $ovRuleUpper = 'Bash(node C:/GIT/case-tool.mjs:*)'
     Write-Text (Join-Path $ov 'overlay.json') (@{
         owner    = 'Testowner'
-        allow    = @($ovRule)
+        allow    = @($ovRule, $ovRuleLower, $ovRuleUpper)
         charters = @(@{ exact = @('C:/charter-root'); files = @('C:/charter-root/CHARTER.md'); note = 'test charter' })
     } | ConvertTo-Json -Depth 5)
     Write-Text (Join-Path $ov 'owner-rules.md') "# Owner rules sentinel`n`nOnly in the overlay.`n"
@@ -354,6 +356,7 @@ try {
     $s = Read-Text $settings
     Assert ((Count-Matches $s ([regex]::Escape($ovRule))) -eq 1) 'overlay: allow rule merged once'
     Assert ((Count-Matches $s $allowPattern) -eq 1) 'overlay: repo allow rule still once'
+    Assert ($s.Contains($ovRuleLower) -and $s.Contains($ovRuleUpper)) 'overlay: rules differing only in case both merged'
     Assert ((Test-Path -LiteralPath $ovSkill) -and (Read-Text $ovSkill).Contains('Hello Testowner.')) 'overlay: skill copied and rendered'
     Assert (-not (Read-Text (Join-Path $claudeDir 'skills\promote\SKILL.md')).Contains('overlay shadow copy')) 'overlay: a repo skill is never replaced'
     Assert (Test-Path -LiteralPath (Join-Path $shared 'ov-skill\SKILL.md')) 'overlay: skill shared with other agents'
@@ -368,6 +371,7 @@ try {
     Run-Uninstall
     $s = Read-Text $settings
     Assert ((Count-Matches $s ([regex]::Escape($ovRule))) -eq 0) 'overlay: allow rule removed by uninstall'
+    Assert (-not ($s.Contains($ovRuleLower) -or $s.Contains($ovRuleUpper))) 'overlay: both case variants removed by uninstall'
     Assert (-not (Test-Path -LiteralPath $ovSkill)) 'overlay: skill removed by uninstall'
     Assert (-not (Test-Path -LiteralPath (Join-Path $shared 'ov-skill'))) 'overlay: shared skill removed by uninstall'
     Assert (-not (Test-Path -LiteralPath $chartersFile)) 'overlay: charters.json removed by uninstall'
