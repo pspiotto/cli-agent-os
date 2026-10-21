@@ -28,8 +28,9 @@
                     <!-- claude-os-machine:end -->.
   2. settings.json: the repo's "hooks" key is deep-merged into the existing
                     file (entries appended per event, duplicates skipped), and
-                    the repo's "permissions.allow" rules are appended when
-                    missing. Every other key is left alone. Backed up first.
+                    the repo's "permissions.allow" rules and "autoMode" prose
+                    lists are appended when missing. Every other key is left
+                    alone. Backed up first.
   3. hooks/, skills/, agents/: copied over. Never mirrors, never deletes local
                     extras.
   4. Plugins       : each entry in $plugins below is installed through the
@@ -190,6 +191,38 @@ function Merge-AllowRules($dstObj, [object[]] $rules, [string] $label) {
         }
     }
     $dstObj.permissions.allow = [object[]] $allow
+    return $added
+}
+
+function Merge-AutoModeRules($dstObj, $srcAutoMode, [string] $label) {
+    # autoMode sections (environment, allow, soft_deny, hard_deny) are lists of
+    # prose the auto-mode classifier reads, from user settings only. Each src
+    # string is appended when missing; non-list keys are left alone. The repo
+    # list carries "$defaults", so a new section keeps the built-in rules.
+    if (-not (Test-Prop $dstObj 'autoMode')) {
+        $dstObj | Add-Member -NotePropertyName 'autoMode' -NotePropertyValue ([pscustomobject]@{})
+    }
+    $added = 0
+    foreach ($sectionProp in $srcAutoMode.PSObject.Properties) {
+        $section = $sectionProp.Name
+        if ($sectionProp.Value -isnot [array]) { continue }
+        if (-not (Test-Prop $dstObj.autoMode $section)) {
+            $dstObj.autoMode | Add-Member -NotePropertyName $section -NotePropertyValue @()
+        }
+        $rules = @(@($dstObj.autoMode.$section) | ForEach-Object { [string] $_ })
+        foreach ($rule in @($sectionProp.Value)) {
+            $ruleText = [string] $rule
+            if ($rules -contains $ruleText) {
+                $summary.Add("$label : already present, skipped ($section)")
+            }
+            else {
+                $rules += $ruleText
+                $added++
+                $summary.Add("$label : added ($section / $ruleText)")
+            }
+        }
+        $dstObj.autoMode.$section = [object[]] $rules
+    }
     return $added
 }
 
@@ -393,13 +426,18 @@ if (Test-Path -LiteralPath $dstSettings) {
     if ($ovAllow.Count -gt 0) {
         $allowAdded += Merge-AllowRules $dstObj $ovAllow 'permission (overlay)'
     }
-    if ($merged -gt 0 -or $allowAdded -gt 0) {
+    # autoMode: prose rules for the auto-mode classifier, appended when missing.
+    $autoAdded = 0
+    if (Test-Prop $srcObj 'autoMode') {
+        $autoAdded = Merge-AutoModeRules $dstObj $srcObj.autoMode 'autoMode  '
+    }
+    if ($merged -gt 0 -or $allowAdded -gt 0 -or $autoAdded -gt 0) {
         Backup-File $dstSettings | Out-Null
         Write-Text $dstSettings (ConvertTo-JsonCompat $dstObj)
-        $summary.Add("settings  : $merged hook entr$(if ($merged -eq 1) { 'y' } else { 'ies' }) and $allowAdded permission rule(s) added; other keys untouched")
+        $summary.Add("settings  : $merged hook entr$(if ($merged -eq 1) { 'y' } else { 'ies' }), $allowAdded permission rule(s) and $autoAdded autoMode rule(s) added; other keys untouched")
     }
     else {
-        $summary.Add("settings  : unchanged (every hook entry and permission rule already present)")
+        $summary.Add("settings  : unchanged (every hook entry, permission rule and autoMode rule already present)")
     }
 }
 else {

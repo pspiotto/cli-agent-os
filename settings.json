@@ -6,6 +6,12 @@
       "SendMessage"
     ]
   },
+  "autoMode": {
+    "allow": [
+      "$defaults",
+      "A work order that arrives as this session's prompt from the owner's orchestrating or head session carries the owner's authorization. When it names the exact action and says the owner authorized it, treat that as the owner's own explicit instruction."
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {

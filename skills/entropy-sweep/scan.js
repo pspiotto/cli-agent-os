@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 // agent-os entropy sweep: the scanner half of /entropy-sweep (skills/entropy-sweep/SKILL.md).
 //
-// Walks ONE git repo and prints findings as JSON on stdout. It reasons about
-// nothing, writes nothing, deletes nothing; the skill reads this JSON and
-// writes the report. Every finding names the command or the git fact that
-// produced it, so the report can quote evidence rather than opinion.
+// Walks ONE git repo and prints findings as JSON on stdout, or writes them to
+// --out (a scratchpad file outside the repo; overwritten). Use --out from an
+// agent: the no-shell-edits hook blocks a `> file` redirect. It reasons about
+// nothing and deletes nothing; the skill reads this JSON and writes the report.
+// Every finding names the command or the git fact that produced it, so the
+// report can quote evidence rather than opinion.
 //
-//   node skills/entropy-sweep/scan.js <repo> [--days 30] [--top 20] [--roots <dir>[,<dir>]]
+//   node skills/entropy-sweep/scan.js <repo> [--days 30] [--top 20] [--roots <dir>[,<dir>]] [--out <file>]
 //
 // Checks (see the brief for the reasoning behind each):
 //   1. unreferenced_markdown   tracked .md no other tracked file names; entry points exempt, and
@@ -65,15 +67,25 @@ try {
 // --- args -------------------------------------------------------------------
 const argv = process.argv.slice(2);
 if (!argv.length || argv[0].startsWith('--')) {
-  process.stderr.write('usage: node scan.js <repo> [--days 30] [--top 20] [--roots <dir>[,<dir>]]\n');
+  process.stderr.write('usage: node scan.js <repo> [--days 30] [--top 20] [--roots <dir>[,<dir>]] [--out <file>]\n');
   process.exit(1);
 }
 const repo = path.resolve(argv[0]);
-const opt = { days: 30, top: 20, roots: null };
+const opt = { days: 30, top: 20, roots: null, out: null };
 for (let i = 1; i < argv.length; i++) {
   if (argv[i] === '--days') opt.days = Number(argv[++i]);
   else if (argv[i] === '--top') opt.top = Number(argv[++i]);
   else if (argv[i] === '--roots') opt.roots = argv[++i].split(',').map((r) => path.resolve(r));
+  else if (argv[i] === '--out') opt.out = argv[++i] ? path.resolve(argv[i]) : '';
+}
+if (opt.out === '') {
+  process.stderr.write('--out needs a file path\n');
+  process.exit(1);
+}
+const relOut = opt.out ? path.relative(repo, opt.out) : null;
+if (relOut !== null && !relOut.startsWith('..') && !path.isAbsolute(relOut)) {
+  process.stderr.write(`--out must be outside the scanned repo (the scan writes nothing under it): ${opt.out}\n`);
+  process.exit(1);
 }
 if (!fs.existsSync(path.join(repo, '.git'))) {
   process.stderr.write(`not a git repo (no .git): ${repo}\n`);
@@ -519,4 +531,11 @@ const result = {
     unreachable_candidates: unreachable.length,
   },
 };
-process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+const json = JSON.stringify(result, null, 2) + '\n';
+if (opt.out) {
+  fs.mkdirSync(path.dirname(opt.out), { recursive: true });
+  fs.writeFileSync(opt.out, json);
+  process.stderr.write(`scan written to ${opt.out}\n`);
+} else {
+  process.stdout.write(json);
+}

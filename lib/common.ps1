@@ -17,7 +17,7 @@ $script:defaultOwner = 'the user'
 
 # Skills that only make sense inside Claude Code. They are not copied to the
 # shared ~/.agents/skills folder or into the Antigravity plugin.
-$script:claudeOnlySkills = @('glm-backend', 'statusline')
+$script:claudeOnlySkills = @('glm-backend', 'statusline', 'workers')
 
 # The line added to a skill's body for agents that ignore Claude Code's
 # disable-model-invocation key.

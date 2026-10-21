@@ -77,6 +77,7 @@ $claimsJs = Join-Path $claudeDir 'hooks\claims-stop.js'
 # the prefix one share this text, so "present once" means the pair, not each.
 $allowPattern = 'Bash\(npm run publish:release:\*\)'
 $localAllowRule = 'Bash(local-only-tool:*)'
+$autoModePattern = 'orchestrating or head session carries'
 $localBlock = "<!-- local:start -->`n@import C:/local/machine-notes.md`n<!-- local:end -->"
 $startPattern = '<!--\s*claude-os:start\s*-->'
 $emptyPairPattern = '(?s)<!--\s*claude-os:start\s*-->\s*<!--\s*claude-os:end\s*-->'
@@ -120,6 +121,7 @@ try {
     Assert ((Count-Matches $s $claimsPattern) -eq 1) 'claims Stop hook entry present once'
     Assert (Test-Path -LiteralPath $claimsJs) 'claims Stop hook script copied'
     Assert ((Count-Matches $s $allowPattern) -eq 1) 'publish allow rule present once'
+    Assert ((Count-Matches $s $autoModePattern) -eq 1) 'autoMode relay rule present once'
 
     # --- 2. reinstall with local extras -------------------------------------
     Write-Host "2. reinstall with local text, wmux block, wmux hook, local allow rule"
@@ -142,6 +144,7 @@ try {
     Assert ($s.Contains('keep-me')) 'other settings keys kept'
     Assert ((Count-Matches $s $allowPattern) -eq 1) 'publish allow rule not duplicated'
     Assert ($s.Contains($localAllowRule)) 'local allow rule kept'
+    Assert ((Count-Matches $s $autoModePattern) -eq 1) 'autoMode relay rule not duplicated'
 
     # --- 3. uninstall -------------------------------------------------------
     Write-Host "3. uninstall"
@@ -162,6 +165,8 @@ try {
     Assert ($s.Contains('keep-me')) 'other settings keys kept after uninstall'
     Assert ((Count-Matches $s $allowPattern) -eq 0) 'publish allow rule removed'
     Assert ($s.Contains($localAllowRule)) 'local allow rule kept after uninstall'
+    Assert ((Count-Matches $s $autoModePattern) -eq 0) 'autoMode relay rule removed'
+    Assert ($s.Contains('$defaults')) 'autoMode $defaults kept after uninstall'
     Assert (-not (Test-Path -LiteralPath $guardJs)) 'guard script removed'
     Assert (-not (Test-Path -LiteralPath (Join-Path $claudeDir 'hooks\no-em-dash.js'))) 'em-dash hook script removed'
     Assert (Test-Path -LiteralPath $enableSkill) 'enable skill kept'
@@ -183,6 +188,8 @@ try {
     Assert (Test-Path -LiteralPath $guardJs) 'guard script back'
     Assert ((Count-Matches $s $allowPattern) -eq 1) 'publish allow rule back once'
     Assert ($s.Contains($localAllowRule)) 'local allow rule kept across the round trip'
+    Assert ((Count-Matches $s $autoModePattern) -eq 1) 'autoMode relay rule back once'
+    Assert ((Count-Matches $s '\$defaults') -eq 1) 'autoMode $defaults not duplicated'
 
     # --- 5. legacy file without markers -------------------------------------
     Write-Host "5. legacy CLAUDE.md with no markers"

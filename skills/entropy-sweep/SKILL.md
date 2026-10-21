@@ -14,7 +14,7 @@ The instrument, not the cleanup. It answers "which documents and worktrees in th
 2. Run the scanner and keep its output out of the conversation:
 
    ```
-   node "C:\GIT\cli-agent-os\skills\entropy-sweep\scan.js" <repo> > <scratchpad>/entropy-scan.json
+   node "C:\GIT\cli-agent-os\skills\entropy-sweep\scan.js" <repo> --out <scratchpad>/entropy-scan.json
    ```
 
    The scanner is plain Node with no dependencies. It walks `git ls-files`, one `git log`, `git worktree list` and the sibling folders of the repo's parent, and prints JSON. Exit code other than 0 means it did not run; say so and stop. Do not reason about the repo yourself; read the JSON.

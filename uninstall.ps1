@@ -111,6 +111,32 @@ function Remove-AllowRules($dstObj, [object[]] $rules, [string] $label) {
     return $removed
 }
 
+function Remove-AutoModeRules($dstObj, $srcAutoMode, [string] $label) {
+    # Takes the repo's prose rules back out of each autoMode list. "$defaults"
+    # stays: removing it would make any local rule left behind replace the
+    # classifier's built-in list.
+    if (-not (Test-Prop $dstObj 'autoMode')) { return 0 }
+    $removed = 0
+    foreach ($sectionProp in $srcAutoMode.PSObject.Properties) {
+        $section = $sectionProp.Name
+        if ($sectionProp.Value -isnot [array]) { continue }
+        if (-not (Test-Prop $dstObj.autoMode $section)) { continue }
+        $srcRules = @($sectionProp.Value | ForEach-Object { [string] $_ } | Where-Object { $_ -ne '$defaults' })
+        $keepRules = New-Object System.Collections.Generic.List[object]
+        foreach ($rule in @($dstObj.autoMode.$section)) {
+            if ($srcRules -contains [string] $rule) {
+                $removed++
+                $summary.Add("$label : removed ($section)")
+            }
+            else {
+                $keepRules.Add($rule)
+            }
+        }
+        $dstObj.autoMode.$section = [object[]] $keepRules.ToArray()
+    }
+    return $removed
+}
+
 function Remove-CopiedFiles([object[]] $files, [string] $srcDir, [string] $dstDir, [bool] $shared, [string] $label) {
     if (-not (Test-Path -LiteralPath $dstDir)) { return }
     $deleted = 0
@@ -202,10 +228,14 @@ if (Test-Path -LiteralPath $dstSettings) {
     if ($ovAllow.Count -gt 0) {
         $allowRemoved += Remove-AllowRules $dstObj $ovAllow 'permission (overlay)'
     }
-    if ($removed -gt 0 -or $allowRemoved -gt 0) {
+    $autoRemoved = 0
+    if (Test-Prop $srcObj 'autoMode') {
+        $autoRemoved = Remove-AutoModeRules $dstObj $srcObj.autoMode 'autoMode  '
+    }
+    if ($removed -gt 0 -or $allowRemoved -gt 0 -or $autoRemoved -gt 0) {
         Backup-File $dstSettings | Out-Null
         Write-Text $dstSettings (ConvertTo-JsonCompat $dstObj)
-        $summary.Add("settings  : $removed hook entr$(if ($removed -eq 1) { 'y' } else { 'ies' }) and $allowRemoved permission rule(s) removed; other hooks, rules and keys untouched")
+        $summary.Add("settings  : $removed hook entr$(if ($removed -eq 1) { 'y' } else { 'ies' }), $allowRemoved permission rule(s) and $autoRemoved autoMode rule(s) removed; other hooks, rules and keys untouched")
     }
     else {
         $summary.Add("settings  : unchanged (no agent-os hook entries or permission rules present)")

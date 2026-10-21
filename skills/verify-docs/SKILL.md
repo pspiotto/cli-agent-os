@@ -15,7 +15,7 @@ Scripts live next to this file in `C:\GIT\cli-agent-os\skills\verify-docs\` (ins
 
 ## Steps
 
-1. **Scan.** Run the sweep's scanner for the repo (`node C:\GIT\cli-agent-os\skills\entropy-sweep\scan.js <repo> > <scratchpad>/scan.json`). It is read-only. If a scan from today already exists in the scratchpad, reuse it.
+1. **Scan.** Run the sweep's scanner for the repo (`node C:\GIT\cli-agent-os\skills\entropy-sweep\scan.js <repo> --out <scratchpad>/scan.json`; never a `>` redirect, which the no-shell-edits hook blocks). It is read-only. If a scan from today already exists in the scratchpad, reuse it.
 2. **List.** `node C:\GIT\cli-agent-os\skills\verify-docs\topdocs.js <scratchpad>/scan.json --top <N>` (default: all of the scan's top list, which is 20 unless the scan ran with `--top`). Show the table. A doc already stamped today is skipped unless {{OWNER}} says otherwise.
 3. **Verify, delegated.** Split the docs into groups of five. For each group launch one `general-purpose` agent on `sonnet` with `verifier-prompt.md` filled in (repo path, the numbered doc list with line counts, and any repo-specific notes such as gitignored runtime paths). All groups run in parallel. They are read-only by instruction; nothing they say is trusted yet.
 4. **Re-check every drift yourself.** For each `WRONG NOW` line, run the one grep or read that proves or disproves it, in this session, and quote the result. A drift you could not reproduce is dropped from the note and recorded in the report as "reported, not reproduced". Spot-check at least one `current` verdict per group the same way.
